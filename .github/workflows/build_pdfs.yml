@@ -15,8 +15,8 @@ jobs:
 
       - name: 🏃 Get musescore version
         run: |
-          echo MUSESCORE_VERSION=$(curl https://api.github.com/repos/quaternionmedia/alfred/releases/latest | jq --raw-output .tag_name ) >> GITHUB_ENV
-          echo MUSESCORE_URL=$(curl https://api.github.com/repos/musescore/musescore/releases/latest |jq -r '.assets[] | select(.name|endswith("AppImage")) | .browser_download_url') >> GITHUB_ENV
+          echo MUSESCORE_VERSION=$(curl -s https://api.github.com/repos/quaternionmedia/alfred/releases/latest | jq --raw-output .tag_name ) >> GITHUB_ENV
+          echo MUSESCORE_URL=$(curl -s https://api.github.com/repos/musescore/musescore/releases/latest |jq -r '.assets[] | select(.name|endswith("AppImage")) | .browser_download_url') >> GITHUB_ENV
 
       - name: 💸 Load cached venv
         id: cache
@@ -34,7 +34,7 @@ jobs:
       - name: 📝 Generate pdfs
         run: |
           mkdir dist
-          for i in *.mscz; do mscore -o dist/$i.pdf $i; done
+          for i in *.mscz; do mscore -Lo dist/$i.pdf $i; done
 
       - name: 📦 Generate Release
         uses: softprops/action-gh-release@v1
