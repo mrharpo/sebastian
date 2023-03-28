@@ -1,0 +1,43 @@
+name: 🎼 Build PDFs
+
+on:
+  workflow_call:
+
+jobs:
+  build_pdfs:
+    name: 🎶 Build PDFs of all musescore files and generate release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📰 Checkout
+        uses: actions/checkout@v3
+
+      - name: 🏃 Get musescore version
+        run: |
+          echo MUSESCORE_VERSION=$(curl https://api.github.com/repos/quaternionmedia/alfred/releases/latest | jq --raw-output .tag_name ) >> GITHUB_ENV
+          echo MUSESCORE_URL=$(curl https://api.github.com/repos/musescore/musescore/releases/latest |jq -r '.assets[] | select(.name|endswith("AppImage")) | .browser_download_url') >> GITHUB_ENV
+
+      - name: 💸 Load cached venv
+        id: cache
+        uses: actions/cache@v3
+        with:
+          path: /usr/local/bin
+          key: musescore-${{ runner.os }}-${{ env.MUSESCORE_VERSION }}
+  
+      - name: 🏋 Download musescore
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          curl -o /usr/local/bin/mscore ${{ env.MUSESCORE_URL }}
+          chmod +x /usr/local/bin/mscore
+
+      - name: 📝 Generate pdfs
+        run: |
+          mkdir dist
+          for i in *.mscz; do mscore -o dist/$i.pdf $i; done
+
+      - name: 📦 Generate Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/*
+          draft: true
+          generate_release_notes: true
