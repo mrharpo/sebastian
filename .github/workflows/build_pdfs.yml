@@ -28,13 +28,13 @@ jobs:
       - name: 🏋 Download musescore
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
-          curl -o /usr/local/bin/mscore ${{ env.MUSESCORE_URL }}
+          curl -Lo /usr/local/bin/mscore ${{ env.MUSESCORE_URL }}
           chmod +x /usr/local/bin/mscore
 
       - name: 📝 Generate pdfs
         run: |
           mkdir dist
-          for i in *.mscz; do mscore -Lo dist/$i.pdf $i; done
+          for i in *.mscz; do mscore -o dist/$i.pdf $i; done
 
       - name: 📦 Generate Release
         uses: softprops/action-gh-release@v1
