@@ -2,6 +2,7 @@ name: 🎼 Build PDFs
 
 on:
   workflow_call:
+  workflow_dispatch:
 
 jobs:
   build_pdfs:
