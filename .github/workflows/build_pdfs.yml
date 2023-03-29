@@ -31,6 +31,9 @@ jobs:
           curl -Lo /usr/local/bin/mscore ${{ env.MUSESCORE_URL }}
           chmod +x /usr/local/bin/mscore
 
+      - name: 💣 Setup dependencies
+        run: sudo apt install -y libfuse2
+
       - name: 📝 Generate pdfs
         run: |
           mkdir dist
