@@ -32,7 +32,10 @@ jobs:
           chmod +x /usr/local/bin/mscore
 
       - name: 💣 Setup dependencies
-        run: sudo apt install -y libfuse2 qt5-default
+        run: sudo apt install -y libfuse2
+
+      - name: 🏳‍🌈 Install Qt
+        uses: jurplel/install-qt-action@v3
 
       - name: 📝 Generate pdfs
         run: |
