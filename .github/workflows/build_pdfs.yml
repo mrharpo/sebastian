@@ -32,7 +32,7 @@ jobs:
           chmod +x /usr/local/bin/mscore
 
       - name: 💣 Setup dependencies
-        run: sudo apt install -y libfuse2
+        run: sudo apt install -y libfuse2 qt5-default
 
       - name: 📝 Generate pdfs
         run: |
