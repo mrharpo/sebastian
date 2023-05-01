@@ -24,7 +24,7 @@ jobs:
         with:
           path: /usr/local/bin
           key: musescore-${{ runner.os }}-${{ env.MUSESCORE_VERSION }}
-  
+
       - name: 🏋 Download musescore
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
@@ -40,7 +40,7 @@ jobs:
       - name: 📝 Generate pdfs
         run: |
           mkdir dist
-          for i in *.mscz; do mscore -o dist/$i.pdf $i; done
+          for i in *.mscz; do mscore -o "dist/${i%.mscz}.pdf" "$i"; done
 
       - name: 📦 Generate Release
         uses: softprops/action-gh-release@v1
