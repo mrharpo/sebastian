@@ -3,6 +3,11 @@ name: 🎼 Build PDFs
 on:
   workflow_call:
   workflow_dispatch:
+    inputs:
+      debug:
+        description: 🐞 Debug mode
+        type: boolean
+        default: false
 
 jobs:
   build_pdfs:
@@ -39,6 +44,8 @@ jobs:
 
       - name: 📝 Generate pdfs
         run: |
+          export QT_DEBUG_PLUGINS=${{ inputs.debug }}
+          export DISPLAY=:0.0
           mkdir dist
           for i in *.mscz; do mscore -o "dist/${i%.mscz}.pdf" "$i"; done
 
