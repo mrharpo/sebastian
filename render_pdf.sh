@@ -1,5 +1,6 @@
 #!/bin/bash
 MUSESCORE=mscore
+
 for i in music/*.mscz
 do
     echo "Rendering: $i"

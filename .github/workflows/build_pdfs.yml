@@ -39,13 +39,13 @@ jobs:
           chmod +x /usr/local/bin/mscore
 
       - name: 💣 Setup dependencies
-        run: sudo apt install -y libfuse2 at-spi2-core libjack-jackd2-0
+        run: sudo apt install -y libfuse2 at-spi2-core
 
       - name: 🏳‍🌈 Install Qt
         uses: jurplel/install-qt-action@v3
 
       - name: 📝 Generate pdfs
-        run: xvfb-run ./render_pdf.sh
+        run: QT_QPA_PLATFORM=offscreen xvfb-run ./render_pdf.sh
 
       - name: 📦 Generate Release
         uses: softprops/action-gh-release@v1
