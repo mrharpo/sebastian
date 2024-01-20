@@ -45,7 +45,7 @@ jobs:
       - name: 📝 Generate pdfs
         run: |
           export QT_DEBUG_PLUGINS=${{ inputs.debug }}
-          export DISPLAY=:0.0
+          export QT_QPA_PLATFORM=offscreen
           mkdir dist
           for i in *.mscz; do mscore -o "dist/${i%.mscz}.pdf" "$i"; done
 
