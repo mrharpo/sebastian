@@ -47,7 +47,7 @@ jobs:
           echo QT_DEBUG_PLUGINS=${{ inputs.debug }} >> $GITHUB_ENV
           echo QT_QPA_PLATFORM=offscreen >> $GITHUB_ENV
           mkdir dist
-          for i in *.mscz; do mscore -o "dist/${i%.mscz}.pdf" "$i"; done
+          for i in music/*.mscz; do mscore -o "dist/${i%.mscz}.pdf" "$i"; done
 
       - name: 📦 Generate Release
         uses: softprops/action-gh-release@v1
