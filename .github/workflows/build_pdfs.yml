@@ -45,7 +45,7 @@ jobs:
         uses: jurplel/install-qt-action@v3
 
       - name: 📝 Generate pdfs
-        run: xvfb-run for i in music/*.mscz; do mscore -o "dist/${i%.mscz}.pdf" "$i"; done
+        run: xvfb-run ./render_pdf.sh
 
       - name: 📦 Generate Release
         uses: softprops/action-gh-release@v1
