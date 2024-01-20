@@ -23,7 +23,6 @@ jobs:
           echo MUSESCORE_VERSION=$(curl -s https://api.github.com/repos/musescore/musescore/releases/latest | jq -r .tag_name ) >> $GITHUB_ENV
           echo MUSESCORE_URL=$(curl -s https://api.github.com/repos/musescore/musescore/releases/latest | jq -r '.assets[] | select(.name|endswith("AppImage")) | .browser_download_url') >> $GITHUB_ENV
           echo QT_DEBUG_PLUGINS=${{ inputs.debug }} >> $GITHUB_ENV
-          echo QT_QPA_PLATFORM=offscreen >> $GITHUB_ENV
           mkdir -p dist
 
       - name: 💸 Load cached venv
@@ -44,11 +43,12 @@ jobs:
 
       - name: 🏳‍🌈 Install Qt
         uses: jurplel/install-qt-action@v3
-        with:
-          extra: --exclude-libs=libnss3.so,libnssutil3.so
 
       - name: 📝 Generate pdfs
-        run: for i in music/*.mscz; do mscore -o "dist/${i%.mscz}.pdf" "$i"; done
+        uses: coactions/setup-xvfb@v1
+        with:
+          run: for i in music/*.mscz; do mscore -o "dist/${i%.mscz}.pdf" "$i"; done
+          working-directory: ./
 
       - name: 📦 Generate Release
         uses: softprops/action-gh-release@v1
