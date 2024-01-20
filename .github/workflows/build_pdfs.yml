@@ -39,7 +39,7 @@ jobs:
           chmod +x /usr/local/bin/mscore
 
       - name: 💣 Setup dependencies
-        run: sudo apt install -y libfuse2 at-spi2-core
+        run: sudo apt install -y libfuse2 at-spi2-core libnss3
 
       - name: 🏳‍🌈 Install Qt
         uses: jurplel/install-qt-action@v3

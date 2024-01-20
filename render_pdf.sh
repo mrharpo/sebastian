@@ -1,5 +1,9 @@
 #!/bin/bash
-for i in music/*.mscz; do
+MUSESCORE=mscore
+for i in music/*.mscz
+do
     echo "Rendering: $i"
-    mscore -o "dist/${i%.mscz}.pdf" "$i"
+    "$MUSESCORE" -o "dist/${i%.mscz}.pdf" "$i"
 done
+echo "Finished rendering PDFs"
+ls -al dist/
