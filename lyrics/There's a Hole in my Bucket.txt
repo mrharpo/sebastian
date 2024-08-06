@@ -1,3 +1,4 @@
+[A]
 There's a hole in my bucket
 Dear Liza, Dear Liza!
 There's a hole in my bucket
@@ -8,6 +9,7 @@ Dear Liza, Dear Liza!
 There's a whole lottta hole in me!
 (The hole in my bucket is me)
 ---
+[A]
 Well fix it, dear Henry
 Dear Henry, dear Henry!
 Well fix it, dear Henry
@@ -15,9 +17,10 @@ Fix it!
 
 Just fix it, dear Henry
 Dear Henry, dear Henry!
-I gotta whole lot of whole in me!
+There's a whole lotta whole in me!
 
 ---
+[B]
 With what shall I fix it
 Dear Liza, Dear Liza?
 With what shall I fix up this hole?
@@ -27,21 +30,26 @@ Hole in my bucket?
 With what shall I mend up me?
 
 ---
-With .. dear Henry
-Dear Henry, dear Henry!
-You gotta fix it with .. fix it!
+[B]
+With sticks or with stones or with mud from the river
+With wood you can find from the tree
 
-Just fix it with ..
-Dear Henry, dear Henry!
+Just fix it and mend
+This big hole in your bucket!
 There's a whole lotta hole in me!
 
 ---
+[A]
 
+
+---
+[B]
 But the hole is too big
-And the .. too dry
+And the stone too dry
 And water is too far away
 
 With what shall I mend this big
 Hole in my bucket?
 There's a whole lotta hole in me!
-(And fix this big hole in me?)
+
+---
