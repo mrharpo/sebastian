@@ -16,36 +16,19 @@ jobs:
 
     steps:
       - name: 📰 Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: 🏃 Get musescore version
+      - name: 🎼 Install musescore
         run: |
-          echo MUSESCORE_VERSION=$(curl -s https://api.github.com/repos/musescore/musescore/releases/latest | jq -r .tag_name ) >> $GITHUB_ENV
-          echo MUSESCORE_URL=$(curl -s https://api.github.com/repos/musescore/musescore/releases/latest | jq -r '.assets[] | select(.name|endswith("AppImage")) | .browser_download_url') >> $GITHUB_ENV
-          echo QT_DEBUG_PLUGINS=${{ inputs.debug }} >> $GITHUB_ENV
-          mkdir -p dist
+          sudo apt install flatpak
+          sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          sudo flatpak install -y --noninteractive flathub org.musescore.MuseScore
 
-      - name: 💸 Load cached venv
-        id: cache
-        uses: actions/cache@v3
+      - name: 📝 Build PDFs
+        uses: coactions/setup-xvfb@v1
         with:
-          path: /usr/local/bin
-          key: musescore-${{ runner.os }}-${{ env.MUSESCORE_VERSION }}
-
-      - name: 🏋 Download musescore
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: |
-          curl -Lo /usr/local/bin/mscore ${{ env.MUSESCORE_URL }}
-          chmod +x /usr/local/bin/mscore
-
-      - name: 💣 Setup dependencies
-        run: sudo apt install -y libfuse2 at-spi2-core xvfb x11-utils libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xfixes0 xdotool
-
-      - name: 🏳‍🌈 Install Qt
-        uses: jurplel/install-qt-action@v3
-
-      - name: 📝 Generate pdfs
-        run: QT_QPA_PLATFORM=offscreen xvfb-run ./render_pdf.sh
+          working-directory: ./
+          run: ./render_pdf.sh
 
       - name: 📦 Generate Release
         uses: softprops/action-gh-release@v1
