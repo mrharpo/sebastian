@@ -9,8 +9,8 @@ for i in music/*.mscz
 do
     FILENAME="$(basename $i)"
     OUTPUT_FILE="$PWD/$OUTPUT_DIR/${FILENAME%.mscz}.pdf"
-    echo "$MUSESCORE -o $OUTPUT_FILE $(realpath $i)"
-    "$MUSESCORE" -o "$OUTPUT_FILE" "$(realpath $i)"
+    echo "CMD: $MUSESCORE -o $OUTPUT_FILE $(realpath $i)"
+    "$MUSESCORE" "-o" "$OUTPUT_FILE" "$(realpath $i)"
 done
 echo "Finished rendering PDFs"
 ls -al dist/
