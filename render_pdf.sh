@@ -4,6 +4,10 @@ OUTPUT_DIR=dist
 
 mkdir -p $OUTPUT_DIR
 
+flatpak list
+
+$MUSESCORE -h
+
 
 for i in music/*.mscz
 do
