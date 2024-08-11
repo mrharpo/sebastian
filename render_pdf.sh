@@ -4,15 +4,11 @@ OUTPUT_DIR=dist
 
 mkdir -p $OUTPUT_DIR
 
-flatpak list
-
-$MUSESCORE -h
-
-
 for i in music/*.mscz
 do
-    echo "Rendering: $i"
-    "$MUSESCORE" -o "$OUTPUT_DIR/${i%.mscz}.pdf" "$i"
+    CMD=$MUSESCORE -o "$OUTPUT_DIR/${i%.mscz}.pdf" "$i"
+    echo "Rendering: $CMD"
+    $CMD
 done
 echo "Finished rendering PDFs"
 ls -al dist/
