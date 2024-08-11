@@ -7,10 +7,10 @@ mkdir -p $OUTPUT_DIR
 
 for i in music/*.mscz
 do
-    FILENAME=$(basename $i)
-    CMD="-o $PWD/$OUTPUT_DIR/${FILENAME%.mscz}.pdf $(realpath $i)"
-    echo "Rendering: $CMD"
-    "$MUSESCORE" $CMD
+    FILENAME="$(basename $i)"
+    OUTPUT_FILE="$PWD/$OUTPUT_DIR/${FILENAME%.mscz}.pdf"
+    echo "$MUSESCORE -o $OUTPUT_FILE $(realpath $i)"
+    "$MUSESCORE" -o "$OUTPUT_FILE" "$(realpath $i)"
 done
 echo "Finished rendering PDFs"
 ls -al dist/
