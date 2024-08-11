@@ -1,5 +1,5 @@
 #!/bin/bash
-MUSESCORE=mscore
+MUSESCORE="flatpak run org.musescore.MuseScore"
 OUTPUT_DIR=dist
 
 mkdir -p $OUTPUT_DIR
