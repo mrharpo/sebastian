@@ -1,10 +1,17 @@
 #!/bin/bash
 MUSESCORE=mscore
+SCORE_DIR=music
+OUT_DIR=dist
 
-for i in music/*.mscz
+mkdir -p "$OUT_DIR"
+
+SUCCESS=0
+for i in $(ls $SCORE_DIR/*.mscz)
 do
-    echo "Rendering: $i"
-    "$MUSESCORE" -o "dist/${i%.mscz}.pdf" "$i"
+    FILENAME=$(basename $i)
+    echo "Rendering: $FILENAME"
+    "$MUSESCORE" -o "$OUT_DIR/${FILENAME%.mscz}.pdf" "$i" && SUCCESS=$((SUCCESS + 1)) || echo "Failed to render $FILENAME"
 done
-echo "Finished rendering PDFs"
-ls -al dist/
+
+$(ls -l "$OUT_DIR")
+echo "Finished rendering $SUCCESS PDFs"
