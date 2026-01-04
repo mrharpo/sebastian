@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# Record MIDI and save it to a file
+
+channels=${1:-1}  # Default to 1 channel if not specified
+DIR=$HOME/Music
+
+echo "Recording MIDI with $channels channels..."
+
+exec pw-midirecord \
+  --target 0 \
+  --latency 200ms \
+  --channels "$channels" \
+  "$DIR/$(date -Ins).midi"
+
+# arecordmidi -p 0 "$DIR/$(date -Ins).midi"

@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Record audio and save it to a file
+
+CHANNELS=${1:-1}  # Default to 1 channel if not specified
+DIR=$HOME/Music
+
+echo "Recording audio with $CHANNELS channels..."
+
+exec pw-record \
+  --target 0 \
+  --channels "$CHANNELS" \
+  --latency 200ms \
+  --format s24 \
+  "$DIR/$(date -Ins).wav"
