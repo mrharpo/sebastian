@@ -1,5 +1,6 @@
 #!/bin/bash
-MUSESCORE=mscore
+# MUSESCORE=mscore
+MUSESCORE="/home/harpo/Desktop/MuseScore-Studio-4.6.5.253511702-aarch64.AppImage"
 SCORE_DIR=music
 OUT_DIR=dist
 

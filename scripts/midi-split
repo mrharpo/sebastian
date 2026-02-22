@@ -1,0 +1,260 @@
+#!/usr/bin/env python3.14
+"""Split a MIDI file into separate files at silent gaps.
+
+Detects periods of silence (no note_on events) longer than a given
+threshold and writes each segment to its own MIDI file, preserving
+tempo, time-signature, key-signature, and program-change state.
+"""
+
+import argparse
+import copy
+import os
+import sys
+from pathlib import Path
+
+import mido
+
+
+def ticks_to_seconds(ticks: int, tempo: int, ticks_per_beat: int) -> float:
+    """Convert MIDI ticks to seconds given current tempo."""
+    return mido.tick2second(ticks, ticks_per_beat, tempo)
+
+
+def find_silent_gaps(mid: mido.MidiFile, threshold: float) -> list[tuple[float, float]]:
+    """Return a list of (start, end) times in seconds where silence exceeds *threshold*.
+
+    Silence is defined as a span where no note is held (all notes off).
+    """
+    ticks_per_beat = mid.ticks_per_beat
+    tempo = 500_000  # default 120 BPM
+
+    # Merge all tracks into a single timeline of absolute-time events
+    events: list[tuple[float, mido.Message]] = []
+    for track in mid.tracks:
+        abs_tick = 0
+        track_tempo = 500_000
+        abs_time = 0.0
+        for msg in track:
+            abs_tick += msg.time
+            abs_time += ticks_to_seconds(msg.time, track_tempo, ticks_per_beat)
+            if msg.type == "set_tempo":
+                track_tempo = msg.tempo
+            events.append((abs_time, msg))
+
+    events.sort(key=lambda e: e[0])
+
+    # Walk events tracking held notes to find silent regions
+    held_notes: set[tuple[int, int]] = set()  # (channel, note)
+    gaps: list[tuple[float, float]] = []
+    silence_start: float | None = 0.0
+
+    for abs_time, msg in events:
+        if msg.type == "note_on" and msg.velocity > 0:
+            key = (msg.channel, msg.note)
+            if not held_notes and silence_start is not None:
+                gap_len = abs_time - silence_start
+                # Skip leading silence at the very start of the file
+                if gap_len >= threshold and silence_start > 0.0:
+                    gaps.append((silence_start, abs_time))
+            held_notes.add(key)
+            silence_start = None
+        elif msg.type == "note_off" or (msg.type == "note_on" and msg.velocity == 0):
+            key = (msg.channel, msg.note)
+            held_notes.discard(key)
+            if not held_notes and silence_start is None:
+                silence_start = abs_time
+
+    return gaps
+
+
+def collect_meta_state(mid: mido.MidiFile) -> list[mido.Message]:
+    """Collect the latest tempo, time-sig, key-sig, and program changes."""
+    state: list[mido.Message] = []
+    for track in mid.tracks:
+        for msg in track:
+            if msg.type in ("set_tempo", "time_signature", "key_signature"):
+                state.append(msg.copy(time=0))
+            elif msg.type == "program_change":
+                state.append(msg.copy(time=0))
+    return state
+
+
+def split_midi(
+    mid: mido.MidiFile,
+    gaps: list[tuple[float, float]],
+) -> list[tuple[mido.MidiFile, float]]:
+    """Split *mid* at the midpoints of the given silent gaps.
+
+    Returns a list of (MidiFile, offset) tuples where *offset* is the
+    absolute time (in seconds) of the first note_on in that segment.
+    Each segment's timeline starts at its first note (leading silence
+    is trimmed).
+    """
+    if not gaps:
+        return [(copy.deepcopy(mid), 0.0)]
+
+    # Compute split points (midpoint of each gap) in seconds
+    split_times = [(start + end) / 2 for start, end in gaps]
+
+    ticks_per_beat = mid.ticks_per_beat
+    segments: list[tuple[mido.MidiFile, float]] = []
+
+    for seg_idx in range(len(split_times) + 1):
+        seg_start = split_times[seg_idx - 1] if seg_idx > 0 else 0.0
+        seg_end = split_times[seg_idx] if seg_idx < len(split_times) else float("inf")
+
+        # --- First pass: find the earliest note_on in this segment ---
+        first_note_time = seg_end
+        for track in mid.tracks:
+            abs_time = 0.0
+            tempo = 500_000
+            for msg in track:
+                abs_time += ticks_to_seconds(msg.time, tempo, ticks_per_beat)
+                if msg.type == "set_tempo":
+                    tempo = msg.tempo
+                if abs_time < seg_start:
+                    continue
+                if abs_time >= seg_end:
+                    break
+                if msg.type == "note_on" and msg.velocity > 0:
+                    first_note_time = min(first_note_time, abs_time)
+                    break
+        # Fall back to seg_start if no note_on found
+        if first_note_time >= seg_end:
+            first_note_time = seg_start
+
+        # --- Second pass: build the segment, trimming leading silence ---
+        new_mid = mido.MidiFile(ticks_per_beat=ticks_per_beat, type=mid.type)
+
+        for track in mid.tracks:
+            new_track = mido.MidiTrack()
+            abs_time = 0.0
+            tempo = 500_000
+            last_written_abs = first_note_time  # start timeline at first note
+            pending_meta: list[mido.Message] = []
+
+            for msg in track:
+                abs_time += ticks_to_seconds(msg.time, tempo, ticks_per_beat)
+
+                if msg.type == "set_tempo":
+                    tempo = msg.tempo
+
+                if abs_time < seg_start:
+                    # Keep track of meta events for state restoration
+                    if msg.type in (
+                        "set_tempo",
+                        "time_signature",
+                        "key_signature",
+                        "program_change",
+                        "control_change",
+                    ):
+                        pending_meta.append(msg.copy(time=0))
+                    continue
+
+                if abs_time >= seg_end:
+                    break
+
+                # First event in segment: prepend accumulated meta state
+                if not new_track:
+                    for m in pending_meta:
+                        new_track.append(m)
+
+                # Compute delta ticks from last written event
+                delta_sec = max(0.0, abs_time - last_written_abs)
+                delta_ticks = max(
+                    0, int(mido.second2tick(delta_sec, ticks_per_beat, tempo))
+                )
+                new_msg = msg.copy(time=delta_ticks)
+                new_track.append(new_msg)
+                last_written_abs = abs_time
+
+            if new_track:
+                new_track.append(mido.MetaMessage("end_of_track", time=0))
+                new_mid.tracks.append(new_track)
+
+        if new_mid.tracks:
+            segments.append((new_mid, first_note_time))
+
+    return segments
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Split a MIDI file into separate files at silent gaps."
+    )
+    parser.add_argument("input", help="Path to the input MIDI file")
+    parser.add_argument(
+        "-t",
+        "--threshold",
+        type=float,
+        default=10.0,
+        help="Minimum silence duration in seconds to split on (default: 10.0)",
+    )
+    parser.add_argument(
+        "-o",
+        "--output-dir",
+        default=None,
+        help="Output directory (default: same directory as input file)",
+    )
+    parser.add_argument(
+        "-p",
+        "--prefix",
+        default=None,
+        help="Output filename prefix (default: input filename stem)",
+    )
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Print detailed progress"
+    )
+
+    args = parser.parse_args()
+
+    input_path = Path(args.input)
+    if not input_path.exists():
+        print(f"Error: file not found: {input_path}", file=sys.stderr)
+        sys.exit(1)
+
+    mid = mido.MidiFile(str(input_path))
+    total_length = mid.length
+
+    if args.verbose:
+        print(
+            f"Loaded {input_path.name}  "
+            f"({len(mid.tracks)} tracks, {total_length:.1f}s, "
+            f"ticks_per_beat={mid.ticks_per_beat})"
+        )
+
+    gaps = find_silent_gaps(mid, args.threshold)
+
+    if args.verbose:
+        print(f"Found {len(gaps)} silent gap(s) >= {args.threshold}s:")
+        for i, (s, e) in enumerate(gaps, 1):
+            print(f"  gap {i}: {s:.2f}s – {e:.2f}s  ({e - s:.2f}s)")
+
+    if not gaps:
+        print("No silent gaps found – nothing to split.")
+        sys.exit(0)
+
+    segments = split_midi(mid, gaps)
+
+    output_dir = Path(args.output_dir) if args.output_dir else input_path.parent
+    output_dir.mkdir(parents=True, exist_ok=True)
+    prefix = args.prefix or input_path.stem
+
+    for i, (seg, offset) in enumerate(segments, 1):
+        # Format offset as MMmSSs
+        total_secs = int(round(offset))
+        mins, secs = divmod(total_secs, 60)
+        out_name = f"{prefix}_{i:03d}_{mins:02d}m{secs:02d}s.mid"
+        out_path = output_dir / out_name
+        seg.save(str(out_path))
+        length = seg.length
+        if args.verbose:
+            print(f"  wrote {out_path}  (offset={offset:.1f}s, length={length:.1f}s)")
+        else:
+            print(out_path)
+
+    print(f"Split into {len(segments)} file(s).")
+
+
+if __name__ == "__main__":
+    main()
